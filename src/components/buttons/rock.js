@@ -4,9 +4,6 @@ module.exports = {
         name: `rock`
     },
     async execute(interaction, client) {
-
-        await interaction.reply({
-            content: `https://www.youtube.com/@TheYardPodcast`
-        });
+        console.log('rock!!!');
     }
 }
