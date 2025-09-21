@@ -3,6 +3,6 @@ module.exports = {
         name: `decline`
     },
     async execute(interaction, client) {
-        console.log('player2 declined');
+        console.log('decline button pressed');
     }
 }

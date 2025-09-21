@@ -3,6 +3,6 @@ module.exports = {
         name: `scissors`
     },
     async execute(interaction, client) {
-        console.log('scissors!!');
+        console.log(console.log(`${interaction.user.id} chose scissors`));
     }
 }

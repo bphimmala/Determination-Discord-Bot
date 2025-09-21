@@ -4,6 +4,6 @@ module.exports = {
         name: `rock`
     },
     async execute(interaction, client) {
-        console.log('rock!!!');
+        console.log(`${interaction.user.id} chose rock`);
     }
 }

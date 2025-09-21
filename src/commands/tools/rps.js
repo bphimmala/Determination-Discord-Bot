@@ -1,6 +1,4 @@
 const { GatewayIntentBits, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection } = require('discord.js')
-import { rps_score } from /functions/logic/rps_logic.js
-
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,111 +52,110 @@ module.exports = {
             collector.on('collect', async (buttonInteraction) => {
                 await buttonInteraction.deferUpdate();
 
-                if (buttonInteraction.customId === 'decline') {
-                    await interaction.followUp(`Sorry, <@${player1}>, <@${player2}> declined RPS!`);
-                }
-                else {
-                    const rps_embed = new EmbedBuilder()
-                        .setTitle(`Rock, Paper, Scissors!`)
-                        .setDescription(`<@${player1}> vs <@${player2}>`)
-                        .setColor(0x82799c)
-                        // .setImage(client.user.displayAvatarURL())
-                        .setTimestamp(Date.now())
-                        .addFields([
-                            {
-                                name: `${interaction.user.username}`,
-                                value: `⚫⚫`,
-                                inline: true
-                            },
-                            {
-                                name: `${play2.username}`,
-                                value: `⚫⚫`,
-                                inline: true
-                            },
-                        ]);
+                if(buttonInteraction.user.id === player2) {
+                    if (buttonInteraction.customId === 'decline') {
+                        await interaction.followUp(`Sorry, <@${player1}>, <@${player2}> declined RPS!`);
+                    }
+                    else {
+                        const rps_embed = new EmbedBuilder()
+                            .setTitle(`Rock, Paper, Scissors!`)
+                            .setDescription(`<@${player1}> vs <@${player2}>`)
+                            .setColor(0x82799c)
+                            // .setImage(client.user.displayAvatarURL())
+                            .setTimestamp(Date.now())
+                            .addFields([
+                                {
+                                    name: `${interaction.user.username}`,
+                                    value: `⚫⚫`,
+                                    inline: true
+                                },
+                                {
+                                    name: `${play2.username}`,
+                                    value: `⚫⚫`,
+                                    inline: true
+                                },
+                            ]);
 
-                    const rock_button = new ButtonBuilder()
-                        .setCustomId('rock')
-                        .setEmoji({name: "🪨"})
-                        .setStyle(ButtonStyle.Secondary);
+                        const rock_button = new ButtonBuilder()
+                            .setCustomId('rock')
+                            .setEmoji({name: "🪨"})
+                            .setStyle(ButtonStyle.Secondary);
 
-                    const paper_button = new ButtonBuilder()
-                        .setCustomId('paper')
-                        .setEmoji({name: "📄"})
-                        .setStyle(ButtonStyle.Secondary);
+                        const paper_button = new ButtonBuilder()
+                            .setCustomId('paper')
+                            .setEmoji({name: "📄"})
+                            .setStyle(ButtonStyle.Secondary);
 
-                    const scissors_button = new ButtonBuilder()
-                        .setCustomId('scissors')
-                        .setEmoji({name: "✂️"})
-                        .setStyle(ButtonStyle.Secondary);
+                        const scissors_button = new ButtonBuilder()
+                            .setCustomId('scissors')
+                            .setEmoji({name: "✂️"})
+                            .setStyle(ButtonStyle.Secondary);
 
-                    const rps_buttons = new ActionRowBuilder().addComponents(rock_button, paper_button, scissors_button);
+                        const rps_buttons = new ActionRowBuilder().addComponents(rock_button, paper_button, scissors_button);
 
-                    let collectedBothMoves = false;
-                    let win = false;
-                    const score = {p1: 0, p2: 0};
-                    let rounds = 0;
-                    while(!collectedBothMoves && !win) {
-                        collectedBothMoves = false;
-
-                        const p1_move_message = await interaction.followUp({
+                        const move_message = await interaction.followUp({
                             embeds: [rps_embed],
                             components: [rps_buttons],
-                            ephemeral: true,
-                        });
-
-                        const p2_move_message = await buttonInteraction.followUp({
-                            embeds: [rps_embed],
-                            components: [rps_buttons],
-                            ephemeral: true,
                         });
 
                         const move_filter = (interaction) => {
-                            return (interaction.customId === 'rock' || interaction.customId === 'paper' || interaction.customId === 'scissors');
+                            return ((interaction.user.id === (player1 || player2)) && (interaction.customId === 'rock' || interaction.customId === 'paper' || interaction.customId === 'scissors'));
                         }
                         
-                        const p1_move_collector = p1_move_message.createMessageComponentCollector({
-                            move_filter, time: 30_000
-                        });
-
-                        const p2_move_collector = p2_move_message.createMessageComponentCollector({
-                            move_filter, time: 30_000
-                        });
-
-                        const p1_move = { move: "n/a" };
-                        const p2_move = { move: "n/a" };
-
-                        p1_move_collector.on('collect', async (moveInteraction) => {
-                            await moveInteraction.deferUpdate();
-                            
-                            if (moveInteraction.customId === 'rock'){
-                                p1_move.move = "rock";
-                            } else if (moveInteraction.customId === 'paper'){
-                                p1_move.move = "paper";
-                            } else {
-                                p1_move.move = "scissors";
-                            }
+                        const move_collector = move_message.createMessageComponentCollector({
+                            move_filter, time: 30_000, max: 2
                         });
                         
-                        p2_move_collector.on('collect', async (moveInteraction) => {
-                            await moveInteraction.deferUpdate();
+                        const correctUsers = [player1, player2];
+                        const playersClicked = new Map();
+                        
+                        move_collector.on('collect', async (moveInteraction) => {
+                            if(!playersClicked.has(moveInteraction.user.id) && correctUsers.includes(moveInteraction.user.id)) {
+                                playersClicked.set(`${moveInteraction.user.id}`, moveInteraction.customId);
+                                await moveInteraction.deferUpdate();
+                                console.log(playersClicked);
+                            }
 
-                            if (moveInteraction.customId === 'rock'){
-                                p2_move.move = "rock";
-                            } else if (moveInteraction.customId === 'paper'){
-                                p2_move.move = "paper";
-                            } else {
-                                p2_move.move = "scissors";
+                            if (playersClicked.size === 2) {
+                                const p1_move = playersClicked.get(player1);
+                                const p2_move = playersClicked.get(player2);
+
+                                let score = 0; // score < 0 = player 1 wins ; score > 0 = player 2 wins
+                                if (p1_move === "rock" && p2_move === "scissors") {
+                                    score--;
+                                }
+                                else if (p1_move === "rock" && p2_move === "paper") {
+                                    score++;
+                                }
+                                else if (p1_move === "paper" && p2_move === "rock") {
+                                    score--;
+                                }
+                                else if (p1_move === "paper" && p2_move === "scissors") {
+                                    score++;
+                                }
+                                else if (p1_move === "scissors" && p2_move === "paper") {
+                                    score--;
+                                }
+                                else if (p1_move === "scissors" && p2_move === "rock") {
+                                    score++;
+                                }
+                                else {
+                                    score += 0;
+                                }
+
+                                if(score === -1) {
+                                    await interaction.followUp(`<@${player1}> wins!`);
+                                }
+                                else if (score === 1) {
+                                    await interaction.followUp(`<@${player2}> wins!`);
+                                }
+                                else {
+                                    await interaction.followUp("You both chose the same thing... #EveryoneIsALoser");
+                                }
+
+                                move_collector.stop();
                             }
                         });
-
-                        collectedBothMoves = true;
-                        let last_score = score;
-                        score = rps_score(p1_move.move, p2_move.move); // negative = p1 winning ; positive = p2 winning
-
-                        if (last_score == score) {
-                            win = false;
-                        }
 
                     }
                 }
